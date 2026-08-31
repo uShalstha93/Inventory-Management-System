@@ -53,7 +53,7 @@
     - [x] View Purchase Order
     - [x] Print Purchase Order
      
-  - [x] Sales
+- [x] Sales
     - [x] Sale Products
     - [x] show Sales List
     - [x] View Sales Invoice
