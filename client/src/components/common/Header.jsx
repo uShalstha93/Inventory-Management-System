@@ -42,7 +42,7 @@ const Header = ({ toggleSidebar }) => {
 
   return (
     <>
-      <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+      <header className="bg-gray-200 shadow-sm px-6 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <button
             onClick={toggleSidebar}
@@ -60,7 +60,7 @@ const Header = ({ toggleSidebar }) => {
           <button className="text-gray-500 hover:text-gray-700 relative">
             <FiBell className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              3
+              0
             </span>
           </button>
 
