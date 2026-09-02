@@ -38,7 +38,7 @@ const PurchaseList = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 font-[Hind]">
                 <h2 className="text-2xl font-bold text-gray-800">Purchases</h2>
                 <button
                     onClick={() => setShowForm(true)}

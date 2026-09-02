@@ -47,7 +47,7 @@ const ProductList = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 font-[Hind]">
                 <h2 className="text-2xl font-bold text-gray-800">Products</h2>
                 <button
                     onClick={() => {
@@ -108,8 +108,8 @@ const ProductList = () => {
                                             <FiEdit2 />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(product.id)}
-                                            className="text-red-600 hover:text-red-900"
+                                            onClick={() => handleDelete(product.id)} disabled
+                                            className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-not-allowed"
                                         >
                                             <FiTrash2 />
                                         </button>

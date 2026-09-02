@@ -62,7 +62,7 @@ const Sidebar = () => {
                             title={collapsed ? item.label : ''}
                         >
                             <Icon className="w-5 h-5 shrink-0" />
-                            {!collapsed && <span>{item.label}</span>}
+                            {!collapsed && <span className="font-[Hind]">{item.label}</span>}
                         </Link>
                     );
                 })}
@@ -73,14 +73,14 @@ const Sidebar = () => {
                     title={collapsed ? 'Logout' : ''}
                 >
                     <FiLogOut className="w-5 h-5 shrink-0" />
-                    {!collapsed && <span>Logout</span>}
+                    {!collapsed && <span className="font-[Hind]">Logout</span>}
                 </button>
             </nav>
             <div>
                 {collapsed ?
                     "" :
                     (
-                        <p className="flex items-center justify-center text-xs text-gray-500 mt-8 px-4">
+                        <p className="flex items-center justify-center text-xs text-gray-500 mt-8 px-4 font-[Montserrat]">
                             &copy; {new Date().getFullYear()} Ushal Bindukar
                         </p>
                     )}

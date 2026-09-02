@@ -41,7 +41,7 @@ const CategoryList = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 font-[Hind]">
                 <h2 className="text-2xl font-bold text-gray-800">Categories</h2>
                 <button
                     onClick={() => {
@@ -82,8 +82,8 @@ const CategoryList = () => {
                                             <FiEdit2 />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(category.id)}
-                                            className="text-red-600 hover:text-red-900"
+                                            onClick={() => handleDelete(category.id)} disabled
+                                            className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-not-allowed"
                                         >
                                             <FiTrash2 />
                                         </button>
