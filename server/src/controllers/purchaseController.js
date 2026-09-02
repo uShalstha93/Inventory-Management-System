@@ -3,14 +3,53 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const getAllPurchases = async (req, res) => {
     try {
-        const [rows] = await pool.execute(`
+        // Get pagination and search parameters from query
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        let query = `
             SELECT p.*, u.username as created_by_name 
             FROM purchases p
             LEFT JOIN users u ON p.created_by = u.id
-            ORDER BY p.created_at DESC
-        `);
-        res.json(rows);
+        `;
+        let countQuery = 'SELECT COUNT(*) as total FROM purchases p';
+        const params = [];
+        const countParams = [];
+
+        // Add search functionality
+        if (search) {
+            query += ' WHERE p.invoice_no LIKE ? OR p.supplier_name LIKE ?';
+            countQuery += ' WHERE p.invoice_no LIKE ? OR p.supplier_name LIKE ?';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm);
+            countParams.push(searchTerm, searchTerm);
+        }
+
+        // Add sorting
+        query += ' ORDER BY p.created_at DESC';
+
+        // Add pagination
+        query += ' LIMIT ? OFFSET ?';
+        params.push(limit, offset);
+
+        // Get total count
+        const [countResult] = await pool.execute(countQuery, countParams);
+        const total = countResult[0].total;
+
+        // Get paginated results
+        const [rows] = await pool.execute(query, params);
+
+        res.json({
+            data: rows,
+            total: total,
+            page: page,
+            limit: limit,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (error) {
+        console.error('Error fetching purchases:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -91,6 +130,42 @@ export const createPurchase = async (req, res) => {
         res.status(201).json(newPurchase[0]);
     } catch (error) {
         await connection.rollback();
+        res.status(500).json({ error: error.message });
+    } finally {
+        connection.release();
+    }
+};
+
+export const deletePurchase = async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // Get purchase items to revert stock
+        const [items] = await connection.execute(
+            'SELECT product_id, quantity FROM purchase_items WHERE purchase_id = ?',
+            [req.params.id]
+        );
+
+        // Revert stock for each item
+        for (const item of items) {
+            await connection.execute(
+                'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+                [item.quantity, item.product_id]
+            );
+        }
+
+        // Delete purchase (cascade will delete items)
+        await connection.execute(
+            'DELETE FROM purchases WHERE id = ?',
+            [req.params.id]
+        );
+
+        await connection.commit();
+        res.json({ message: 'Purchase deleted successfully' });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Delete purchase error:', error);
         res.status(500).json({ error: error.message });
     } finally {
         connection.release();

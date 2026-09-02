@@ -20,9 +20,26 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
     const fetchProducts = async () => {
         try {
             const response = await axios.get('/products');
-            setProducts(response.data);
+            console.log('Products response:', response.data); // Debug log
+
+            // Handle both array and paginated response
+            let productsData = [];
+            if (Array.isArray(response.data)) {
+                // If response is directly an array
+                productsData = response.data;
+            } else if (response.data && Array.isArray(response.data.data)) {
+                // If response is paginated with data property
+                productsData = response.data.data;
+            } else {
+                // If response is empty or unexpected format
+                productsData = [];
+            }
+
+            setProducts(productsData);
         } catch (error) {
+            console.error('Error fetching products:', error);
             toast.error('Failed to fetch products');
+            setProducts([]);
         }
     };
 
@@ -34,7 +51,10 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
     };
 
     const removeItem = (index) => {
-        if (formData.items.length === 1) return;
+        if (formData.items.length === 1) {
+            toast.error('At least one item is required');
+            return;
+        }
         const newItems = formData.items.filter((_, i) => i !== index);
         setFormData({ ...formData, items: newItems });
     };
@@ -51,13 +71,21 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
 
+        // Validate items
+        const invalidItems = formData.items.some(item => !item.product_id || item.quantity <= 0 || item.cost_price <= 0);
+        if (invalidItems) {
+            toast.error('Please fill all item fields correctly');
+            return;
+        }
+
+        setLoading(true);
         try {
             await axios.post('/purchases', formData);
             toast.success('Purchase created successfully');
             onSuccess();
         } catch (error) {
+            console.error('Purchase error:', error);
             toast.error(error.response?.data?.error || 'Failed to create purchase');
         } finally {
             setLoading(false);
@@ -114,7 +142,7 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
                             <button
                                 type="button"
                                 onClick={addItem}
-                                className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 hover:bg-green-700"
+                                className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 hover:bg-green-700 transition-colors"
                             >
                                 <FiPlus /> Add Item
                             </button>
@@ -122,26 +150,32 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
                         {formData.items.map((item, index) => (
                             <div key={index} className="grid grid-cols-12 gap-2 mb-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
                                 <div className="col-span-12 md:col-span-5">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Product</span>
+                                    <span className="text-sm font-medium text-gray-700 block mb-1">Product *</span>
                                     <select
                                         value={item.product_id}
                                         onChange={(e) => updateItem(index, 'product_id', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                         required
                                     >
                                         <option value="">Select Product</option>
-                                        {products.map((p) => (
-                                            <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                                        ))}
+                                        {Array.isArray(products) && products.length > 0 ? (
+                                            products.map((p) => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.name} ({p.sku}) - Stock: {p.stock_quantity}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="" disabled>No products available</option>
+                                        )}
                                     </select>
                                 </div>
 
                                 <div className="col-span-6 md:col-span-2">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Qty</span>
+                                    <span className="text-sm font-medium text-gray-700 block mb-1">Qty *</span>
                                     <input
                                         type="number"
                                         value={item.quantity}
-                                        onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value))}
+                                        onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
                                         placeholder="Qty"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
@@ -150,12 +184,12 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
                                 </div>
 
                                 <div className="col-span-5 md:col-span-3">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Cost Price</span>
+                                    <span className="text-sm font-medium text-gray-700 block mb-1">Cost Price *</span>
                                     <input
                                         type="number"
                                         step="0.01"
                                         value={item.cost_price}
-                                        onChange={(e) => updateItem(index, 'cost_price', parseFloat(e.target.value))}
+                                        onChange={(e) => updateItem(index, 'cost_price', parseFloat(e.target.value) || 0)}
                                         placeholder="Cost Price"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
@@ -163,22 +197,25 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
                                     />
                                 </div>
 
-                                <div className="col-span-1">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Action</span>
+                                <div className="col-span-1 flex items-end">
                                     <button
                                         type="button"
                                         onClick={() => removeItem(index)}
-                                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors items-center"
+                                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Remove item"
                                     >
-                                        <FiTrash2 />
+                                        <FiTrash2 className="w-5 h-5" />
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="text-lg font-bold">
+                    <div className="flex justify-between items-center mb-4 p-4 bg-gray-100 rounded-lg">
+                        <div>
+                            <p className="text-sm text-gray-600">Total Items: {formData.items.length}</p>
+                        </div>
+                        <div className="text-lg font-bold text-blue-600">
                             Total: Rs. {calculateTotal().toFixed(2)}
                         </div>
                     </div>
@@ -194,9 +231,19 @@ const PurchaseForm = ({ onClose, onSuccess }) => {
                         <button
                             type="submit"
                             disabled={loading || formData.items.some(item => !item.product_id)}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                         >
-                            {loading ? 'Creating...' : 'Create Purchase'}
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Creating...
+                                </>
+                            ) : (
+                                'Create Purchase'
+                            )}
                         </button>
                     </div>
                 </form>
