@@ -51,7 +51,7 @@ const Header = ({ toggleSidebar }) => {
             <FiMenu className="w-6 h-6" />
           </button>
           <h2 className="text-xl font-semibold text-gray-800 font-[Montserrat]">
-            Welcome, <span className="font-[Italianno] uppercase">{user?.username || 'User'}</span>
+            Welcome, <span className="uppercase italic">{user?.username || 'User'}</span>
           </h2>
         </div>
 
