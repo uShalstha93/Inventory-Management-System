@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from '../../utils/axiosConfig';
 import { setCredentials } from '../../features/auth/authSlice';
+import Logo from '../../assets/Logo.jpg';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -31,8 +32,11 @@ const Login = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
             <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-                <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
-                    Inventory Management
+                <div className="flex justify-center mb-4">
+                    <img src={Logo} alt="Logo" className="w-30 rounded-[50%]" />
+                </div>
+                <h2 className="text-xl font-bold text-center text-gray-700 mb-8 font-[Montserrat]">
+                    EuphoriaNepal | Inventory Management
                 </h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
