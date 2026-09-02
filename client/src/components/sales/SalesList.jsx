@@ -81,6 +81,13 @@ const SalesList = () => {
         setCurrentPage(1);
     };
 
+    // Truncate product names if too long
+    const truncateText = (text, maxLength = 30) => {
+        if (!text) return '-';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    };
+
     return (
         <div>
             {/* Header with Search */}
@@ -152,6 +159,7 @@ const SalesList = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Net Amount</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -166,6 +174,18 @@ const SalesList = () => {
                                         </td>
                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{sale.invoice_no}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{sale.customer_name}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            <div className="flex items-center gap-2">
+                                                <span title={sale.product_names || '-'}>
+                                                    {truncateText(sale.product_names || '-', 35)}
+                                                </span>
+                                                {sale.total_products > 1 && (
+                                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                                        {sale.total_products} items
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4 text-sm text-right text-gray-700">{formatCurrency(sale.total_amount)}</td>
                                         <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">
                                             {formatCurrency(sale.net_amount)}

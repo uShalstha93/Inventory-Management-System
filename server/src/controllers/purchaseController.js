@@ -9,26 +9,58 @@ export const getAllPurchases = async (req, res) => {
         const offset = (page - 1) * limit;
         const search = req.query.search || '';
 
+        // Base query with product names
         let query = `
-            SELECT p.*, u.username as created_by_name 
+            SELECT 
+                p.*, 
+                u.username as created_by_name,
+                GROUP_CONCAT(DISTINCT pr.name SEPARATOR ', ') as product_names,
+                COUNT(DISTINCT pi.product_id) as total_products
             FROM purchases p
             LEFT JOIN users u ON p.created_by = u.id
+            LEFT JOIN purchase_items pi ON p.id = pi.purchase_id
+            LEFT JOIN products pr ON pi.product_id = pr.id
         `;
+
         let countQuery = 'SELECT COUNT(*) as total FROM purchases p';
         const params = [];
         const countParams = [];
 
-        // Add search functionality
+        // Add search functionality - including product names
         if (search) {
-            query += ' WHERE p.invoice_no LIKE ? OR p.supplier_name LIKE ?';
-            countQuery += ' WHERE p.invoice_no LIKE ? OR p.supplier_name LIKE ?';
             const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm);
-            countParams.push(searchTerm, searchTerm);
+
+            // For the main query with product name search
+            query += `
+                WHERE p.invoice_no LIKE ? 
+                OR p.supplier_name LIKE ? 
+                OR EXISTS (
+                    SELECT 1 
+                    FROM purchase_items pi2 
+                    JOIN products pr2 ON pi2.product_id = pr2.id 
+                    WHERE pi2.purchase_id = p.id 
+                    AND pr2.name LIKE ?
+                )
+            `;
+            params.push(searchTerm, searchTerm, searchTerm);
+
+            // For the count query (needs to match the main query)
+            countQuery += `
+                WHERE p.invoice_no LIKE ? 
+                OR p.supplier_name LIKE ? 
+                OR EXISTS (
+                    SELECT 1 
+                    FROM purchase_items pi2 
+                    JOIN products pr2 ON pi2.product_id = pr2.id 
+                    WHERE pi2.purchase_id = p.id 
+                    AND pr2.name LIKE ?
+                )
+            `;
+            countParams.push(searchTerm, searchTerm, searchTerm);
         }
 
-        // Add sorting
-        query += ' ORDER BY p.created_at DESC';
+        // Add grouping and sorting
+        query += ' GROUP BY p.id ORDER BY p.created_at DESC';
 
         // Add pagination
         query += ' LIMIT ? OFFSET ?';

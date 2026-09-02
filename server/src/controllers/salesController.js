@@ -3,42 +3,65 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const getAllSales = async (req, res) => {
     try {
-        // Get pagination and search parameters from query
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
         const search = req.query.search || '';
 
         let query = `
-            SELECT s.*, u.username as created_by_name 
+            SELECT 
+                s.*, 
+                u.username as created_by_name,
+                GROUP_CONCAT(DISTINCT pr.name SEPARATOR ', ') as product_names,
+                COUNT(DISTINCT si.product_id) as total_products
             FROM sales s
             LEFT JOIN users u ON s.created_by = u.id
+            LEFT JOIN sales_items si ON s.id = si.sale_id
+            LEFT JOIN products pr ON si.product_id = pr.id
         `;
+
         let countQuery = 'SELECT COUNT(*) as total FROM sales s';
         const params = [];
         const countParams = [];
 
-        // Add search functionality
         if (search) {
-            query += ' WHERE s.invoice_no LIKE ? OR s.customer_name LIKE ? OR s.customer_email LIKE ?';
-            countQuery += ' WHERE s.invoice_no LIKE ? OR s.customer_name LIKE ? OR s.customer_email LIKE ?';
             const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm);
-            countParams.push(searchTerm, searchTerm, searchTerm);
+
+            query += `
+                WHERE s.invoice_no LIKE ? 
+                OR s.customer_name LIKE ? 
+                OR s.customer_email LIKE ?
+                OR EXISTS (
+                    SELECT 1 
+                    FROM sales_items si2 
+                    JOIN products pr2 ON si2.product_id = pr2.id 
+                    WHERE si2.sale_id = s.id 
+                    AND pr2.name LIKE ?
+                )
+            `;
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+
+            countQuery += `
+                WHERE s.invoice_no LIKE ? 
+                OR s.customer_name LIKE ? 
+                OR s.customer_email LIKE ?
+                OR EXISTS (
+                    SELECT 1 
+                    FROM sales_items si2 
+                    JOIN products pr2 ON si2.product_id = pr2.id 
+                    WHERE si2.sale_id = s.id 
+                    AND pr2.name LIKE ?
+                )
+            `;
+            countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
         }
 
-        // Add sorting
-        query += ' ORDER BY s.created_at DESC';
-
-        // Add pagination
-        query += ' LIMIT ? OFFSET ?';
+        query += ' GROUP BY s.id ORDER BY s.created_at DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
-        // Get total count
         const [countResult] = await pool.execute(countQuery, countParams);
         const total = countResult[0].total;
 
-        // Get paginated results
         const [rows] = await pool.execute(query, params);
 
         res.json({
