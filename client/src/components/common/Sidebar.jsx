@@ -39,7 +39,7 @@ const Sidebar = () => {
                 }`}
         >
             <div className="flex items-center justify-between mb-8 px-2">
-                {!collapsed && <h1 className="text-2xl font-bold">EuhoriaNepal</h1>}
+                {!collapsed && <h1 className="text-2xl font-bold font-[Montserrat]">EuhoriaNepal</h1>}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
                     className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700"

@@ -181,7 +181,7 @@ const ProductList = () => {
                                             {product.image_url ? (
                                                 <img
                                                     src={`http://localhost:8092${product.image_url}`}
-                                                    alt={product.name}
+                                                    alt={product.name} loading='lazy'
                                                     className="h-12 w-12 object-cover rounded"
                                                     onError={(e) => {
                                                         e.target.style.display = 'none';

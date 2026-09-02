@@ -33,7 +33,7 @@ const Login = () => {
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
             <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
                 <div className="flex justify-center mb-4">
-                    <img src={Logo} alt="Logo" className="w-30 rounded-[50%]" />
+                    <img src={Logo} alt="Logo" className="w-30 rounded-[50%]" loading='lazy' />
                 </div>
                 <h2 className="text-xl font-bold text-center text-gray-700 mb-8 font-[Montserrat]">
                     EuphoriaNepal | Inventory Management
