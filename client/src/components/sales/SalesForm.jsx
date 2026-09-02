@@ -24,11 +24,25 @@ const SalesForm = ({ onClose, onSuccess }) => {
     const fetchProducts = async () => {
         try {
             const response = await axios.get('/products');
+            console.log('Products response:', response.data); // Debug log
+
+            // Handle both array and paginated response
+            let productsData = [];
+            if (Array.isArray(response.data)) {
+                productsData = response.data;
+            } else if (response.data && Array.isArray(response.data.data)) {
+                productsData = response.data.data;
+            } else {
+                productsData = [];
+            }
+
             // Filter only products with stock > 0
-            const availableProducts = response.data.filter(p => p.stock_quantity > 0);
+            const availableProducts = productsData.filter(p => p.stock_quantity > 0);
             setProducts(availableProducts);
         } catch (error) {
+            console.error('Error fetching products:', error);
             toast.error('Failed to fetch products');
+            setProducts([]);
         }
     };
 
@@ -58,7 +72,6 @@ const SalesForm = ({ onClose, onSuccess }) => {
                         ...item,
                         product_id: value,
                         price: selectedProduct ? parseFloat(selectedProduct.price) : 0,
-                        // Reset quantity to 1 when product changes
                         quantity: 1
                     };
                 }
@@ -235,7 +248,7 @@ const SalesForm = ({ onClose, onSuccess }) => {
                             <div key={index} className="grid grid-cols-12 gap-2 mb-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
                                 {/* Product Select */}
                                 <div className="col-span-12 md:col-span-5">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Product</span>
+                                    <span className="text-sm font-medium text-gray-700 block mb-1">Product *</span>
                                     <select
                                         value={item.product_id}
                                         onChange={(e) => updateItem(index, 'product_id', e.target.value)}
@@ -243,23 +256,26 @@ const SalesForm = ({ onClose, onSuccess }) => {
                                         required
                                     >
                                         <option value="">Select Product</option>
-                                        {products.map((product) => (
-                                            <option key={product.id} value={product.id}>
-                                                {product.name} ({product.sku}) - Stock: {product.stock_quantity}
-                                            </option>
-                                        ))}
+                                        {Array.isArray(products) && products.length > 0 ? (
+                                            products.map((product) => (
+                                                <option key={product.id} value={product.id}>
+                                                    {product.name} ({product.sku}) - Stock: {product.stock_quantity}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="" disabled>No products available</option>
+                                        )}
                                     </select>
-                                    {/* Show selected product name */}
-                                    {/* {item.product_id && (
+                                    {item.product_id && (
                                         <p className="text-xs text-green-600 mt-1">
                                             Selected: {getProductName(item.product_id)}
                                         </p>
-                                    )} */}
+                                    )}
                                 </div>
 
                                 {/* Quantity */}
                                 <div className="col-span-6 md:col-span-2">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Qty</span>
+                                    <span className="text-sm font-medium text-gray-700 block mb-1">Qty *</span>
                                     <input
                                         type="number"
                                         value={item.quantity}
@@ -273,7 +289,7 @@ const SalesForm = ({ onClose, onSuccess }) => {
 
                                 {/* Price */}
                                 <div className="col-span-5 md:col-span-3">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Selling Price</span>
+                                    <span className="text-sm font-medium text-gray-700 block mb-1">Selling Price *</span>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -287,24 +303,16 @@ const SalesForm = ({ onClose, onSuccess }) => {
                                 </div>
 
                                 {/* Remove Button */}
-                                <div className="col-span-1">
-                                    <span className="text-sm font-medium text-gray-700 pl-2">Action</span>
+                                <div className="col-span-1 flex items-end">
                                     <button
                                         type="button"
                                         onClick={() => removeItem(index)}
-                                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors items-center"
+                                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors"
                                         title="Remove item"
                                     >
-                                        <FiTrash2 />
+                                        <FiTrash2 className="w-5 h-5" />
                                     </button>
                                 </div>
-
-                                {/* Subtotal for this item */}
-                                {/* {item.product_id && item.quantity > 0 && item.price > 0 && (
-                                    <div className="col-span-12 text-right text-sm text-gray-600 mt-1">
-                                        Subtotal: ${(parseInt(item.quantity) * parseFloat(item.price)).toFixed(2)}
-                                    </div>
-                                )} */}
                             </div>
                         ))}
                     </div>
@@ -312,13 +320,13 @@ const SalesForm = ({ onClose, onSuccess }) => {
                     {/* Total */}
                     <div className="flex justify-between items-center mb-4 p-4 bg-gray-100 rounded-lg">
                         <div>
-                            <p className="text-sm text-gray-600">Subtotal: ${subtotal.toFixed(2)}</p>
-                            <p className="text-sm text-gray-600">Discount: ${(parseFloat(formData.discount) || 0).toFixed(2)}</p>
-                            <p className="text-sm text-gray-600">Tax: ${(parseFloat(formData.tax) || 0).toFixed(2)}</p>
+                            <p className="text-sm text-gray-600">Subtotal: Rs. {subtotal.toFixed(2)}</p>
+                            <p className="text-sm text-gray-600">Discount: Rs. {(parseFloat(formData.discount) || 0).toFixed(2)}</p>
+                            <p className="text-sm text-gray-600">Tax: Rs. {(parseFloat(formData.tax) || 0).toFixed(2)}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-gray-600">Total Amount</p>
-                            <p className="text-2xl font-bold text-blue-600">${total.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-blue-600">Rs. {total.toFixed(2)}</p>
                         </div>
                     </div>
 
@@ -334,9 +342,19 @@ const SalesForm = ({ onClose, onSuccess }) => {
                         <button
                             type="submit"
                             disabled={loading || formData.items.some(item => !item.product_id)}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                         >
-                            {loading ? 'Creating...' : 'Create Sale'}
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Creating...
+                                </>
+                            ) : (
+                                'Create Sale'
+                            )}
                         </button>
                     </div>
                 </form>
