@@ -39,7 +39,7 @@ const Sidebar = () => {
                 }`}
         >
             <div className="flex items-center justify-between mb-8 px-2">
-                {!collapsed && <h1 className="text-2xl font-bold">Inventory</h1>}
+                {!collapsed && <h1 className="text-2xl font-bold">EuhoriaNepal</h1>}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
                     className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700"
@@ -47,6 +47,7 @@ const Sidebar = () => {
                     {collapsed ? <FiChevronRight className="w-5 h-5" /> : <FiChevronLeft className="w-5 h-5" />}
                 </button>
             </div>
+
             <nav>
                 {menuItems.map((item) => {
                     const Icon = item.icon;
