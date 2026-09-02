@@ -266,11 +266,11 @@ const SalesForm = ({ onClose, onSuccess }) => {
                                             <option value="" disabled>No products available</option>
                                         )}
                                     </select>
-                                    {item.product_id && (
+                                    {/* {item.product_id && (
                                         <p className="text-xs text-green-600 mt-1">
                                             Selected: {getProductName(item.product_id)}
                                         </p>
-                                    )}
+                                    )} */}
                                 </div>
 
                                 {/* Quantity */}
