@@ -2,14 +2,53 @@ import pool from '../config/database.js';
 
 export const getAllProducts = async (req, res) => {
     try {
-        const [rows] = await pool.execute(`
+        // Get pagination and search parameters from query
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        let query = `
             SELECT p.*, c.name as category_name 
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            ORDER BY p.name
-        `);
-        res.json(rows);
+        `;
+        let countQuery = 'SELECT COUNT(*) as total FROM products p';
+        const params = [];
+        const countParams = [];
+
+        // Add search functionality
+        if (search) {
+            query += ' WHERE p.name LIKE ? OR p.sku LIKE ? OR p.description LIKE ?';
+            countQuery += ' WHERE p.name LIKE ? OR p.sku LIKE ? OR p.description LIKE ?';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm);
+            countParams.push(searchTerm, searchTerm, searchTerm);
+        }
+
+        // Add sorting
+        query += ' ORDER BY p.name ASC';
+
+        // Add pagination
+        query += ' LIMIT ? OFFSET ?';
+        params.push(limit, offset);
+
+        // Get total count
+        const [countResult] = await pool.execute(countQuery, countParams);
+        const total = countResult[0].total;
+
+        // Get paginated results
+        const [rows] = await pool.execute(query, params);
+
+        res.json({
+            data: rows,
+            total: total,
+            page: page,
+            limit: limit,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (error) {
+        console.error('Error fetching products:', error);
         res.status(500).json({ error: error.message });
     }
 };
